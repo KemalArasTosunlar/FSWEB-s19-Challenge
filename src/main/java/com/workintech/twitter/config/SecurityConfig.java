@@ -61,6 +61,7 @@ public class SecurityConfig {
                 auth.requestMatchers(HttpMethod.POST,"/auth/**").permitAll();
                 auth.requestMatchers(HttpMethod.GET,"/users/**").permitAll();
                 auth.requestMatchers(HttpMethod.GET,"/tweet/**").permitAll();
+                auth.requestMatchers(HttpMethod.POST,"/tweet/**").permitAll();
 /*               auth.requestMatchers(HttpMethod.GET,"/account").hasAuthority("ADMIN");
                 auth.requestMatchers(HttpMethod.GET, "/account/{id}").hasAnyAuthority("ADMIN", "USER");
                 //auth.requestMatchers(HttpMethod.GET,"/account/{id}").hasAuthority("ADMIN");

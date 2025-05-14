@@ -1,12 +1,15 @@
 package com.workintech.twitter.controller;
 
 import com.workintech.twitter.entity.Tweet;
+import com.workintech.twitter.entity.User;
 import com.workintech.twitter.service.TweetService;
+import com.workintech.twitter.service.UserService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,59 +18,58 @@ import java.util.List;
 @RequestMapping("/tweet")
 public class TweetController {
 
-    private final TweetService tweetService;
+    private TweetService tweetService;
+    private UserService userService;
 
     @Autowired
-    public TweetController(TweetService tweetService) {
+    public TweetController(TweetService tweetService, UserService userService) {
         this.tweetService = tweetService;
+        this.userService = userService;
     }
 
-    private Long getAuthenticatedUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        // Assuming the principal contains user id as Long or a custom UserDetails with getId()
-        Object principal = authentication.getPrincipal();
-        if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
-            // If you have a custom UserDetails implementation with getId(), cast and get id
-            // For now, assuming username is userId string, parse it
-            String username = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
-            return Long.parseLong(username);
-        } else if (principal instanceof String) {
-            // principal is username string, parse as userId
-            return Long.parseLong((String) principal);
-        }
-        throw new RuntimeException("Unable to get authenticated user id");
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public List<Tweet> findAll(){
+        return tweetService.findAll();
     }
 
-    @PostMapping
-    public ResponseEntity<Tweet> createTweet(@Valid @RequestBody Tweet tweet) {
-        Long userId = getAuthenticatedUserId();
-        Tweet createdTweet = tweetService.createTweet(tweet, userId);
-        return ResponseEntity.ok(createdTweet);
+
+    // 1. Tweeti ID ile bulma
+    @GetMapping("/{id}")
+    public Tweet getTweetById(@Positive @PathVariable Long id){
+        return tweetService.findById(id);
     }
 
-    @GetMapping("/findByUserId")
-    public ResponseEntity<List<Tweet>> getTweetsByUserId(@RequestParam Long userId) {
-        List<Tweet> tweets = tweetService.getTweetsByUserId(userId);
-        return ResponseEntity.ok(tweets);
+
+    // 2. Kullanıcı ID'sine göre tweetleri listeleme
+    @GetMapping("/user/{userId}")
+    public List<Tweet> getTweetsByUserId(@Positive @PathVariable Long userId){
+        return tweetService.findByUserId(userId);
     }
 
-    @GetMapping("/findById")
-    public ResponseEntity<Tweet> getTweetById(@RequestParam Long id) {
-        Tweet tweet = tweetService.getTweetById(id);
-        return ResponseEntity.ok(tweet);
+    // 3. Kullanıcı adına göre tweetleri listeleme
+    @GetMapping("/username/{username}")
+    public List<Tweet> getTweetsByUsername(@PathVariable String username){
+        return tweetService.findAllByUsername(username);
+    }
+    // 4. Tweet oluşturma
+    @PostMapping("/create")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Tweet createTweet(@RequestBody Tweet tweet){
+        return tweetService.save(tweet);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Tweet> updateTweet(@PathVariable Long id, @Valid @RequestBody Tweet tweet) {
-        Long userId = getAuthenticatedUserId();
-        Tweet updatedTweet = tweetService.updateTweet(id, tweet, userId);
-        return ResponseEntity.ok(updatedTweet);
+    // 5. Tweet güncelleme
+    @PutMapping("/update/{id}")
+    public Tweet updateTweet(@PathVariable Long id, @RequestBody Tweet tweet){
+
+        return tweetService.update(id, tweet);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTweet(@PathVariable Long id) {
-        Long userId = getAuthenticatedUserId();
-        tweetService.deleteTweet(id, userId);
-        return ResponseEntity.noContent().build();
-    }
+    // 6. Tweet silme
+    @DeleteMapping("/delete/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)//204 status
+    public void deleteTweet(@Positive @PathVariable("id") Long id){ //JSON, Json convert
+        tweetService.delete(id);
+}
 }

@@ -2,6 +2,7 @@ package com.workintech.twitter.service;
 
 
 import com.workintech.twitter.entity.Tweet;
+import com.workintech.twitter.entity.User;
 import com.workintech.twitter.exception.TwitterException;
 import com.workintech.twitter.repository.TweetRepository;
 
@@ -9,6 +10,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -58,10 +61,16 @@ public class TweetServiceImpl implements TweetService {
 
     @Override
     public Tweet save(Tweet tweet) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName(); // çünkü UserDetails içinde email'i username() olarak set etmiştin
+
+        User user = userService.findByEmail(email);
+        tweet.setUser(user);
         tweet.setCreatedAt(LocalDateTime.now());
 
         return tweetRepository.save(tweet);
     }
+
 
     @Override
     public Tweet replaceOrCreate(Long id, Tweet tweet) {
@@ -93,6 +102,7 @@ public class TweetServiceImpl implements TweetService {
         tweetRepository.delete(tweet);
 
     }
+
 }
 
 
